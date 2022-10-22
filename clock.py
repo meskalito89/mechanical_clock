@@ -1,4 +1,5 @@
 import tkinter as tk
+import tkinter
 import string
 import random
 import datetime
@@ -9,23 +10,49 @@ import math
 class Clock(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
+        self.title = 'Hurry up!!!'
         self.canvas_width = 300
         self.canvas_height = 300
         self.second_length = self.canvas_width * 0.7
-        self.geometry("500x500")
+        self.geometry("500x600")
         self.update()
         self.columnconfigure(0, weight=1)
         self.canvas = tk.Canvas(width=self.canvas_width, height=self.canvas_height, bg='white')
-        self.canvas.pack(expand=True, fill="both")    
+        self.canvas.pack()
+        self.canvas.pack(expand=True, fill="both", side='top')    
+        frame2 = tk.Frame(self).pack()
+        hour_label = tk.Label(self, text='Hour').pack(frame2, side=tkinter.LEFT)
+        frame = tk.Frame(self).pack(side=tkinter.BOTTOM)
+
+        self.my_hour = tk.IntVar(value=0)
+        self.hour = tk.Spinbox(self,
+                                from_=0,
+                                to=11,
+                                width=4,
+                                increment=1,
+                                textvariable=self.my_hour,
+                                wrap=True).pack(frame, side=tkinter.LEFT)
+        minute_label = tk.Label(self, text='Min').pack(frame2, side=tkinter.LEFT)
+
+        self.my_minute = tk.IntVar(value=0)
+        self.minute = tk.Spinbox(self,
+                                from_=0,
+                                to=59,width=4,
+                                increment=1,
+                                textvariable=self.my_minute,
+                                wrap=True).pack(frame, side=tkinter.LEFT)
+
         self.current_datetime = datetime.datetime.now()
+        self.offset_datetime = 0
         self.time_track = 0
-        tk.Button(self, text="Set time", command=lambda: TestCode(self)).pack()
+        self.button = tk.Button(self, text="Set time", command=self.set_time).pack(frame, side=tkinter.LEFT)
+
         self.cx = self.winfo_width()/2
-        self.cy = self.winfo_height()/2
+        self.cy = self.winfo_height()/2 - 80
         self.resizable(False, False)
         self.offset_second = 0
-        self.offset_minute = 0
         self.offset_hour = 0
+        self.offset_minute = 0
 
     def draw_line(self, length, angle, *args, **kwargs):
         part = angle - math.pi/2
@@ -74,23 +101,34 @@ class Clock(tk.Tk):
 
     def get_time(self):
         now = datetime.datetime.now()
-        hour = now.hour + self.offset_hour
-        minute = now.minute + self.offset_minute
-        second = now.second + self.offset_second
+        hour = now.hour - self.offset_hour
+        minute = now.minute - self.offset_minute
+        second = now.second
+        try:
+            date = datetime.time(hour=hour, minute=minute, second=second)
+        except ValueError:
+            hour = now.hour
+            minute = now.minute
         return datetime.time(hour=hour, minute=minute, second=second)
 
-    def set_hour(self, hour):
-        if hour > 0 and hour < 12:
-            self.offset_hour = hour
-    
-    def set_minute(self, minute):
-        if minute > 0 and minute < 60:
-            self.offset_minute = minute
-
     def set_time(self):
-        pass
+        now = datetime.datetime.now()
+        hour = now.hour
+        minute = now.minute
+
+        try:
+            set_hour=self.my_hour.get()
+            set_minute=self.my_minute.get()
+        except tk.TclError:
+            self.offset_hour = 0
+            self.offset_minute = 0
+            return
+
+        self.offset_hour = hour - set_hour
+        self.offset_minute = minute - set_minute
 
     def update_per_sec(self):
+
         self.canvas.delete('all')
         date = self.get_time()
         hour = date.hour
